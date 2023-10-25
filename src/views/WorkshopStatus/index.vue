@@ -15,8 +15,19 @@ const data = reactive({
     flag: false
 })
 
+var queryTimer = setInterval(() => {
+    for (var item of data.tableData) {
+        WorkshopService.countOrder({ orderId: item.id }).then((res) => {
+            // console.log(res.data.counts)
+            if (res.data.counts == 0)
+                location.reload()
+        })
+    }
+}, 500)
+
 const onExitBtnClicked = () => {
     localStorage.removeItem('token')
+    clearInterval(queryTimer)
     router.push('/login')
 }
 
@@ -40,19 +51,8 @@ const onShowDetailTxtClicked = (index) => {
 
 }
 
-var queryTimer = setInterval(() => {
-    for (var item of data.tableData) {
-        WorkshopService.countOrder({ orderId: item.id }).then((res) => {
-            // console.log(res.data.counts)
-            if (res.data.counts == 0)
-                location.reload()
-        })
-    }
-}, 500)
-
 const onExitDetailBtnClicked = () => {
     data.isShowDetail = false
-    clearInterval(queryTimer)
 }
 
 
