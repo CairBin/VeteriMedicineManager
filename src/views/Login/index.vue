@@ -47,6 +47,7 @@ const onLoginBtnClicked = (formRef) => {
                     console.log(res)
                     localStorage.setItem("token", res.data.token)
                     localStorage.setItem("identity", 'admin')
+                    localStorage.setItem("email", data.formData.email)
                     ElMessage({
                         type: 'success',
                         message: '登录成功'
@@ -68,6 +69,7 @@ const onLoginBtnClicked = (formRef) => {
                     console.log(res.data)
                     localStorage.setItem("token", res.data.token)
                     localStorage.setItem("identity", 'user')
+                    localStorage.setItem("email", data.formData.email)
                     ElMessage({
                         type: 'success',
                         message: '登录成功'

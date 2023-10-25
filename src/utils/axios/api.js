@@ -35,6 +35,14 @@ export class MedicineService {
     static async getAllMedicine() {
         return request.getReq('/apiSer/manager/medicineDetail', {})
     }
+
+    static async getOneMedicine(params) {
+        return request.getReq('/apiSer/workshop/getMedicineDetailById', params)
+    }
+
+    static async getOneMedicineManager(params) {
+        return request.getReq('/apiSer/manager/getMedicineDetailById', params)
+    }
 }
 
 
@@ -44,6 +52,9 @@ export class OrderService {
     }
     static async addOrder(params) {
         return request.postReq('/apiSer/manager/order', params)
+    }
+    static async makeTask(params) {
+        return request.postReq('/apiSer/manager/makeTasks', params)
     }
 }
 
@@ -61,11 +72,22 @@ export class WorkshopService {
         return request.postReq('/apiSer/manager/changeWorkshopDetail', params)
     }
 
-    static async makeTask(param) {
-        return request.postReq('/apiSer/manager/makeTasks', params)
-    }
+
 
     static async seeDaysTask(params) {
         return request.getReq('/apiSer/workshop/order', params)
+    }
+
+    static async changePassword(params) {
+        return request.postReq('/apiSer/workshop/changePassword', params)
+    }
+
+    static async finishOrder(params) {
+        return request.postReq('/apiSer/workshop/finish', params)
+    }
+
+
+    static async countOrder(params) {
+        return request.getReq('/apiSer/workshop/count', params)
     }
 }

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { WorkshopService } from '../../utils/axios/api';
+import { WorkshopService, MedicineService } from '../../utils/axios/api';
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
@@ -11,7 +11,8 @@ const router = useRouter()
 const data = reactive({
     tableData: [],
     isShowDetail: false,
-    detailData: []
+    detailData: [],
+    flag: false
 })
 
 const onExitBtnClicked = () => {
@@ -19,15 +20,41 @@ const onExitBtnClicked = () => {
     router.push('/login')
 }
 
-const onShowDetailTxtClicked = (info) => {
-    console.log(info)
+const onShowDetailTxtClicked = (index) => {
+    var info = data.tableData[index].taskItems
+    data.detailData.length = 0
+    for (var i = 0; i < info.length; i++) {
+        let counts = info[i].counts
+        MedicineService.getOneMedicine({ id: info[i].medicineId }).then((res) => {
+            var obj = {
+                id: res.data.medicine.id,
+                name: res.data.medicine.name,
+                counts
+            }
+            data.detailData.push(obj)
+        })
+    }
+    // data.detailData = temp
+    // console.warn(data.detailData)
     data.isShowDetail = true
-    data.detailData = info
+
 }
+
+var queryTimer = setInterval(() => {
+    for (var item of data.tableData) {
+        WorkshopService.countOrder({ orderId: item.id }).then((res) => {
+            // console.log(res.data.counts)
+            if (res.data.counts == 0)
+                location.reload()
+        })
+    }
+}, 500)
 
 const onExitDetailBtnClicked = () => {
     data.isShowDetail = false
+    clearInterval(queryTimer)
 }
+
 
 const main = () => {
     WorkshopService.seeDaysTask({ id: route.params.id }).then((res) => {
@@ -38,17 +65,9 @@ const main = () => {
             else
                 item.state = "未完成"
 
-            if (item.distribute == "1") {
-                item.enableFinish = true
-                item.distribute = "已下发"
-            }
-            else {
-                item.enableFinish = false
-                item.distribute = "未下发"
-            }
         }
         data.tableData = tempLst
-        //console.log(tempLst)
+
     }).catch((err) => {
         console.error(err)
         ElMessage({
@@ -56,6 +75,8 @@ const main = () => {
             message: '获取任务出错，请检查网络'
         })
     })
+
+
 }
 
 main()
@@ -73,10 +94,28 @@ const onChangePwdBtnClicked = () => {
         }
     })
         .then(({ value }) => {
-            ElMessage({
-                type: 'success',
-                message: `The workshop password is:${value}`,
-            })
+            ElMessageBox.confirm('您将修改车间密码，这可能会造成不良后果，是否继续？', 'warning', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                WorkshopService.changePassword({
+                    workshopId: route.params.id,
+                    email: localStorage.getItem('email'),
+                    password: value
+                }).then((res) => {
+                    ElMessage({
+                        type: 'success',
+                        message: '修改成功'
+                    })
+                }).catch((err) => {
+                    ElMessage({
+                        type: 'error',
+                        message: '修改失败，请检查网络'
+                    })
+                })
+            }).catch(() => { })
+
         })
         .catch(() => {
             ElMessage({
@@ -85,6 +124,33 @@ const onChangePwdBtnClicked = () => {
             })
         })
 }
+
+const onFinishBtnTxtClicked = (id) => {
+    WorkshopService.finishOrder({ orderId: id }).then((res) => {
+        var cnt = res.data.count
+        // console.log(res.data)
+        if (cnt == 0) {
+            location.reload()
+            ElMessage({
+                type: 'warning',
+                message: '该任务最后一单已经完成，无需重复'
+            })
+        }
+        else {
+            ElMessage({
+                type: 'success',
+                message: `成功完成任务，剩余任务${cnt}`
+            })
+        }
+    }).catch((err) => {
+        console.error(err)
+        ElMessage({
+            type: 'error',
+            message: '提交错误，请刷新页面并重新提交'
+        })
+    })
+}
+
 </script>
 
 
@@ -98,9 +164,10 @@ const onChangePwdBtnClicked = () => {
                 </div>
             </template>
             <el-table class="full-size" :data="data.detailData">
-                <el-table-column label="ID" prop="id"></el-table-column>
-                <el-table-column label="药品ID" prop="medicineId"></el-table-column>
-                <el-table-column label="药品名称" prop="medicineName"></el-table-column>
+                <!-- <el-table-column label="ID" prop="id"></el-table-column> -->
+                <el-table-column label="药品ID" prop="id"></el-table-column>
+                <el-table-column label="药品名称" prop="name"></el-table-column>
+                <el-table-column label="数量" prop="counts"></el-table-column>
             </el-table>
         </el-card>
     </div>
@@ -131,10 +198,10 @@ const onChangePwdBtnClicked = () => {
                 <el-table-column label="完成时间" prop="finishTime"></el-table-column>
                 <el-table-column label="操作">
                     <template #default="scope">
-                        <el-button link type="primary" size="small" @click="onShowDetailTxtClicked(scope.row.taskItems)">
+                        <el-button link type="primary" size="small" @click="onShowDetailTxtClicked(scope.$index)">
                             查看详情
                         </el-button>
-                        <el-button link type="primary" size="small" :disabled="!scope.row.enableFinish">
+                        <el-button link type="primary" size="small" @click="onFinishBtnTxtClicked(scope.row.id)">
                             完成
                         </el-button>
                     </template>
