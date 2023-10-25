@@ -9,7 +9,7 @@ import request from './request'
 
 export class IdentityService {
     static async login(email, password) {
-        return request.postReq('/apiSer/manager/user', {
+        return request.postReq('/apiSer/manager/login', {
             email,
             password
         })

@@ -44,6 +44,7 @@ const onLoginBtnClicked = (formRef) => {
         if (data.isAdmin)
             IdentityService.login(data.formData.email, data.formData.password)
                 .then((res) => {
+                    console.log(res)
                     localStorage.setItem("token", res.data.token)
                     localStorage.setItem("identity", 'admin')
                     ElMessage({
@@ -54,6 +55,7 @@ const onLoginBtnClicked = (formRef) => {
                         route.push("/admin")
                 })
                 .catch((err) => {
+                    //console.error(localStorage.getItem('token'))
                     console.log(err)
                     ElMessage({
                         type: 'error',
@@ -63,13 +65,14 @@ const onLoginBtnClicked = (formRef) => {
         else
             IdentityService.workshopLogin(data.formData.email, data.formData.password)
                 .then((res) => {
+                    console.log(res.data)
                     localStorage.setItem("token", res.data.token)
                     localStorage.setItem("identity", 'user')
                     ElMessage({
                         type: 'success',
                         message: '登录成功'
                     })
-                    route.push({ name: "build", params: { id: res.data.id } })
+                    route.push({ name: "build", params: { id: res.data.workshopId } })
                 })
                 .catch((err) => {
                     console.log(err)

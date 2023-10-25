@@ -9,6 +9,8 @@ const data = reactive({
 
 const main = () => {
     MedicineService.getAllMedicine().then((res) => {
+        console.log('药物列表')
+        console.log(res.data.medicines)
         data.tableData = res.data.medicines
     }).catch((err) => {
         console.error(err)
@@ -30,7 +32,7 @@ main()
         <el-table-column label="功效" prop="symptom"></el-table-column>
         <el-table-column label="图片" prop="path">
             <template #default="scope">
-                <img :src="data.tableData[scope.$index].path" />
+                <img :src="'/imgSer/'+data.tableData[scope.$index].path" style="width:100px;height:100px;" />
             </template>
         </el-table-column>
     </el-table>

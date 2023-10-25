@@ -9,7 +9,7 @@ const data = reactive({
 
 const main = () => {
     UserService.getAllManager().then((res) => {
-        data.tableData = res.data
+        data.tableData = res.data.managers
     }).catch((err) => {
         console.log(err)
         ElMessage({

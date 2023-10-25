@@ -5,16 +5,18 @@ import status from './status'
 
 axios.defaults.timeout = 60000      //api timeout time
 
+
 //http request interceptor
 axios.interceptors.request.use(
     config => {
         let token = window.localStorage.getItem('token')
         config.headers = {
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=UTF-8',
+            'token':localStorage.getItem('token')
         }
-        if (localStorage.getItem('token')) {
-            config.headers.Authorization = 'Bearer ' + localStorage.getItem('token')
-        }
+        // if (localStorage.getItem('token')) {
+        //     config.headers.Authorization = '' + localStorage.getItem('token')
+        // }
 
         return config
     },
@@ -27,12 +29,19 @@ axios.interceptors.request.use(
 //http response interceptor
 axios.interceptors.response.use(
     response => {
+        console.log(response)
+        if(response.data.state!='200')
+        {
+            
+            return Promise.reject(response.data)
+        }
+        console.log("成功")
         return response
     },
     error => {
         const { response } = error
         if (response) {
-            status.statusFilter(response.code)
+            status.statusFilter(response.data.state)
             return Promise.reject(response.data)
         } else {
             ElMessage({ type: 'error', message: 'Network error' })
