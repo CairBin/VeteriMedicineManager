@@ -29,6 +29,10 @@ export class UserService {
         return request.getReq('/apiSer/manager/queryAllManager', {})
     }
 
+    static async addManager(params) {
+        return request.postReq('/apiSer/manager/addManager');
+    }
+
 }
 
 export class MedicineService {
@@ -42,6 +46,22 @@ export class MedicineService {
 
     static async getOneMedicineManager(params) {
         return request.getReq('/apiSer/manager/getMedicineDetailById', params)
+    }
+
+    static async addMedicine(params) {
+        return request.postReq('/apiSer/manager/addMedicine', params)
+    }
+
+    static async changeMedicine(params) {
+        return request.postReq('/apiSer/manager/changeMedicineDetail', params)
+    }
+
+    static async changePicture(params) {
+        return request.postReq('/apiSer/manager/changeImage', params)
+    }
+
+    static async deleteMedicine(params) {
+        return request.postReq('/apiSer/manager/deleteMedicineById', params)
     }
 }
 
@@ -72,6 +92,14 @@ export class WorkshopService {
         return request.postReq('/apiSer/manager/changeWorkshopDetail', params)
     }
 
+    static async deleteShop(params) {
+        return request.postReq('/apiSer/manager/deleteWorkshop', params)
+    }
+
+    //管理员修改车间密码
+    static async changePasswordByManager(params) {
+        return request.postReq('/apiSer/manager/changeWorkshop', params);
+    }
 
 
     static async seeDaysTask(params) {

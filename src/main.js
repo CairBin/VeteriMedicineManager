@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import "echarts";
 /*
     Element Plus
     please refer to https://element-plus.org/en-US/
