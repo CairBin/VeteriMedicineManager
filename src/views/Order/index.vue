@@ -1,7 +1,30 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive,provide, ref } from 'vue'
 import { OrderService, MedicineService } from '../../utils/axios/api'
 import { ElMessage } from 'element-plus'
+
+
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { PieChart } from 'echarts/charts';
+import {
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+} from 'echarts/components';
+import VChart, { THEME_KEY } from 'vue-echarts';
+
+
+use([
+    CanvasRenderer,
+    PieChart,
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+]);
+
+provide(THEME_KEY);
+
 
 const data = reactive({
     tableData: [
@@ -20,7 +43,14 @@ const data = reactive({
         number: 0
     },
     options: [],
-    isShowDrawer: false
+    isShowDrawer: false,
+    showDetail:false,
+    chartForm:{
+        begin:'',
+        end:'',
+        data:{}
+    },
+    tempId:''
 })
 
 
@@ -144,9 +174,126 @@ const onDistributeBtnClicked = (index) => {
     })
 }
 
+
+
+const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
+    data.tempId = orderId
+
+    OrderService.getDetail({
+        orderId,beginTime,finishTime
+    }).then((res)=>{
+        let result = {
+            title: {
+                text: '药物详情',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b} : {c} ({d}%)',
+
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                data: [],
+            },
+            series: [
+                {
+                    name: 'Traffic Sources',
+                    type: 'pie',
+                    radius: '55%',
+                    center: ['50%', '60%'],
+                    data: [
+                        { value: 335, name: 'Direct' },
+                        { value: 310, name: 'Email' },
+                        { value: 234, name: 'Ad Networks' },
+                        { value: 135, name: 'Video Ads' },
+                        { value: 1548, name: 'Search Engines' },
+                    ],
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)',
+                        },
+                    }
+                }
+            ]
+        }
+        
+        console.log(res.data.data)
+        let lst = res.data.data
+        let nameLst = []
+        let series = []
+        let obj = {
+            name: "完成总量",
+            type: 'pie',
+            radius: '55%',
+            center: ["50%", "60%"],
+            data: [],
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)',
+                },
+            },
+            isShow: true
+        }
+
+        result.isShow = lst.length != 0
+        for (var i = 0; i < lst.length; i++) {
+            nameLst.push(lst[i].workshopNumber)
+            obj.data.push({
+                value: lst[i].count,
+                name: lst[i].workshopNumber
+            })
+        }
+        series.push(obj)
+        result.series = series
+        result.legend.data = nameLst
+        data.chartForm = result
+        data.showDetail = true
+
+    }).catch((err)=>{
+        console.error(err)
+        ElMessage({
+            type:'error',
+            message:'请求错误'
+        })
+    })
+}
+
 </script>
 
 <template>
+    <div class="card-container full-size" style="width:1000px;height:800px;" v-if="data.showDetail">
+        <el-card class="tb-card">
+            <template #header>
+                <div class="card-header">
+                    <span>详情信息</span>
+
+                    <el-button class="button" @click="data.showDetail=false" type="danger">关闭</el-button>
+                </div>
+            </template>
+            <!-- <el-date-picker
+        v-model="data.chartForm.begin"
+        type="datetime"
+        placeholder="开始时间"
+        @change="onDetailTxtClicked(data.tempId,data.chartForm.begin,data.chartForm.end)"
+      />
+      <el-date-picker
+        v-model="data.chartForm.end"
+        type="datetime"
+        placeholder="结束时间"
+        @change="onDetailTxtClicked(data.tempId,data.chartForm.begin,data.chartForm.end)"
+      /> -->
+            <v-chart style="width:80%;height:400px;" :option="data.chartForm">
+
+            </v-chart>
+        </el-card>
+    </div>
+
     <el-drawer v-model="data.isShowDrawer" title="新增订单" :with-header="true">
         <el-form labelPosition="top">
             <el-form-item label="公司名称">
@@ -156,15 +303,15 @@ const onDistributeBtnClicked = (index) => {
                 <el-input v-model="data.formData.phone" placeholder="电话" />
             </el-form-item>
             <el-form-item label="完成期限">
-                <el-input-number style="width:200px;" v-model="data.formData.finishTime" :min="1" />
+                <el-input-number style="width:100%;" v-model="data.formData.finishTime" :min="1" />
             </el-form-item>
             <el-form-item label="药品种类">
-                <el-select v-model="data.medicineObj.id" placeholder="选择药品种类">
+                <el-select v-model="data.medicineObj.id" placeholder="选择药品种类" style="width:100%;">
                     <el-option v-for="item in data.options" :key="item.id" :label="item.name" :value="item.id" />
                 </el-select>
             </el-form-item>
             <el-form-item label="数量">
-                <el-input-number style="width:200px;" v-model="data.medicineObj.number" :min="1" />
+                <el-input-number style="width:100%;" v-model="data.medicineObj.number" :min="1" />
             </el-form-item>
             <el-form-item>
                 <el-button type="warning" @click="onAddKindBtnClicked" style="width:200px;">添加</el-button>
@@ -192,7 +339,7 @@ const onDistributeBtnClicked = (index) => {
         <el-table-column label="完成时间" prop="finishTime"></el-table-column>
         <el-table-column label="操作">
             <template #default="scope">
-                <el-button link type="primary" size="small">
+                <el-button link type="primary" size="small" @click="onDetailTxtClicked(scope.row.id,null,null)">
                     查看详情
                 </el-button>
                 <el-button @click="onDistributeBtnClicked(scope.$index)" link type="primary" size="small"
@@ -208,5 +355,25 @@ const onDistributeBtnClicked = (index) => {
 .full-size {
     width: 100%;
     height: 100%;
+}
+
+.card-container {
+    background-color: rgba(0, 0, 0, 0);
+    z-index: 5;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tb-card {
+    height: 70%;
+    width: 80%;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 </style>

@@ -81,6 +81,27 @@ export class MedicineService {
     }
 
     static async changePicture(params) {
+        return new Promise((resolve, reject) => {
+            console.log(params.medicineImg)
+            let promise = axios({
+                method: 'POST',
+                url: '/apiSer/manager/changeImage',
+                data: params.medicineImg,
+                params: {
+                    id:params.id
+                },
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'token': localStorage.getItem('token')
+                }
+            })
+
+            promise.then(res => {
+                resolve(res)
+            }).catch(err => {
+                reject(err)
+            })
+        })
         return request.postReq('/apiSer/manager/changeImage', params)
     }
 
@@ -99,6 +120,9 @@ export class OrderService {
     }
     static async makeTask(params) {
         return request.postReq('/apiSer/manager/makeTasks', params)
+    }
+    static async getDetail(params){
+        return request.postReq('/apiSer/manager/queryWorkshopTaskCount',params)
     }
 }
 
@@ -141,5 +165,43 @@ export class WorkshopService {
 
     static async countOrder(params) {
         return request.getReq('/apiSer/workshop/count', params)
+    }
+
+    static async newFinishOrder(params){
+        return request.postReq('/apiSer/workshop/finishTheTask',params)
+    }
+
+    static async getWorkshopNumber(params){
+        return request.getReq('/apiSer/workshop/getNumberById',params)
+    }
+
+    static async getWorkshopMission(params){
+        return request.getReq('/apiSer/workshop/getWorkshopMission',params)
+    }
+
+    static async changeWorkshopInfo(params){
+        return request.postReq('/apiSer/manager/changeWorkshop',params)
+    }
+
+    static async deleteWorkshop(id){
+        return request.postReq('/apiSer/manager/deleteWorkshop',{id})
+    }
+}
+
+
+export class ChartService{
+    static async viewAllTask(){
+        return request.getReq('/apiSer/manager/querySumTaskWorkshop',{})
+    }
+
+    static async viewWeekTask(){
+        return request.getReq('/apiSer/manager/querySumTaskWorkshopWeek',{})
+    }
+
+    static async viewMonthTask(){
+        return request.getReq('/apiSer/manager/querySumTaskWorkshopMonth',{})
+    }
+    static async viewYearTask(){
+        return request.getReq('/apiSer/manager/querySumTaskWorkshopYear',{})
     }
 }

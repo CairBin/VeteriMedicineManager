@@ -73,7 +73,7 @@ const onExitBtnClicked = () => {
                     <router-view></router-view>
                 </el-main>
                 <el-footer class="page-footer">
-                    Footer
+                   
                 </el-footer>
             </el-container>
         </el-container>
@@ -134,7 +134,7 @@ const onExitBtnClicked = () => {
 .page-main {}
 
 .page-footer {
-    background-color: aqua;
+    
     flex: 0 0 auto;
 }
 </style>

@@ -1,12 +1,13 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { WorkshopService } from '../../utils/axios/api';
-import { ElMessage } from 'element-plus'
+import { ElMessage,ElMessageBox } from 'element-plus'
 import ValidModel from '../../utils/validate/index.js'
 
 const formRef = ref()
 
 const data = reactive({
+    isShowChangeDrawer:false,
     tableData: [],
     isShowDrawer: false,
     formData: {
@@ -27,6 +28,11 @@ const data = reactive({
             message: '编号不能为空',
             trigger: 'blur'
         }]
+    },
+    changeForm:{
+        id:null,
+        number:'',
+        password:''
     }
 })
 
@@ -81,10 +87,69 @@ const onSubmitBtnClicked = (formRef) => {
 
 main()
 
+const onChangeSubmitBtnClicked = ()=>{
+    WorkshopService.changeWorkshopInfo(data.changeForm).then((res)=>{
+        ElMessage({
+            type:'success',
+            message:'成功'
+        })
+        window.location.reload()
+    }).catch((err)=>{
+        console.error(err)
+        ElMessage({type:'error',message:'请求错误'})
+    })
+}
+
+const onDeleteBtnClicked = (id)=>{
+    ElMessageBox.confirm(
+        '此操作可能会造成不可逆的后果，是否确认删除此车间？',
+        '警告',
+        {
+            confirmButtonText: '确认',
+            cancelButtonText: 'Cancel',
+            type: 'warning',
+        }
+    ).then(()=>{
+        WorkshopService.deleteWorkshop(id).then((res)=>{
+            window.location.reload()
+            ElMessage({
+                type:'success',
+                message:'成功'
+            })
+        }).catch((err)=>{
+            console.error(err)
+            ElMessage({
+                type:'error',
+                message:'请求失败，请检查网络'
+            })
+        })
+    }).catch(()=>{
+
+    })
+}
+
 </script>
 
 
 <template>
+    <el-drawer v-model="data.isShowChangeDrawer">
+        <template #header>
+            修改车间信息
+        </template>
+        <template #default>
+            <el-form>
+                <el-form-item label="车间编号">
+                    <el-input v-model="data.changeForm.number"></el-input>
+                </el-form-item>
+                <el-form-item label="车间密码">
+                    <el-input type="password" v-model="data.changeForm.password"></el-input>
+                </el-form-item>
+            </el-form>
+        </template>
+        <template #footer>
+            <el-button type="primary" @click="onChangeSubmitBtnClicked">提交</el-button>
+        </template>
+    </el-drawer>
     <el-drawer v-model="data.isShowDrawer" title="新增车间" :with-header="true">
         <el-form ref="formRef" labelPosition="top" :model="data.formData" :rules="data.formRule">
             <el-form-item label="注册邮箱" prop="email">
@@ -104,6 +169,12 @@ main()
         <el-table-column label="编号" prop="number"></el-table-column>
         <el-table-column label="密码" prop="password"></el-table-column>
         <el-table-column label="注册时间" prop="registerTime"></el-table-column>
+        <el-table-column label="操作">
+            <template #default="scope">
+                <el-button link type="primary" @click="data.isShowChangeDrawer=true,data.changeForm.id=scope.row.id">修改</el-button>
+                <el-button link type="danger" @click="onDeleteBtnClicked(scope.row.id)">删除</el-button>
+            </template>
+        </el-table-column>
     </el-table>
 </template>
 

@@ -17,6 +17,16 @@ const data = reactive({
         price: 0,
         symptom: '',
         medicineImg: ''
+    },
+    showUploadDrawer:false,
+    medicineImg:'',
+    changeId:'',
+    updateDrawer:false,
+    updateForm:{
+        id:'',
+        name:'',
+        price:0,
+        symptom:''
     }
 })
 
@@ -123,9 +133,131 @@ const onUploadChanged = (file, filelist) => {
 
 }
 
+const onUploadChanged2 = (file, filelist) => {
+    var testmsg = file.name.substring(file.name.lastIndexOf('.') + 1)
+    const extension = testmsg === 'png' || testmsg === 'jpg'
+    if (!extension) {
+        ElMessage({
+            type: 'error',
+            message: '错误的文件格式'
+        })
+        return;
+    }
+
+
+    const reader = new FileReader()
+    reader.readAsDataURL(file.raw)
+    reader.fileName = file.name
+    reader.onload = () => {
+        if (reader.result) {
+            data.medicineImg = reader.result
+        } else {
+            ElMessage({
+                type: 'error',
+                message: '错误的格式'
+            })
+        }
+    }
+
+}
+
+const onSubmitBtnClicked2 = ()=>{
+    MedicineService.changePicture({id:data.changeId,medicineImg:data.medicineImg}).then((res)=>{
+        ElMessage({
+            type:'success',
+            message:'操作成功'
+        })
+        window.location.reload()
+    }).catch((err)=>{
+        console.error(err)
+        ElMessage({type:'error',message:'提交失败'})
+    })
+}
+
+const onInfoSubBtnClicked = ()=>{
+    for(var index in data.updateForm){
+        if(!data.updateForm[index]){
+            ElMessage({
+                type:'error',
+                message:'非法的数据'
+            })
+            return;
+        }
+    }
+
+    if(!Number(data.updateForm.price) || data.updateForm.price<=0)
+    {
+        console.error(typeof(data.updateForm.price))
+        ElMessage({
+            type:'error',
+            message:'价格格式有误'
+        })
+        return;
+    }
+    MedicineService.changeMedicine(data.updateForm).then((res)=>{
+        window.location.reload()
+    }).catch((err)=>{
+        console.error(err)
+        ElMessage({
+            type:'error',
+            message:'请求错误'
+        })
+    })
+}
+
 </script>
 
 <template>
+    <el-drawer v-model="data.updateDrawer">
+        <template #header>
+            修改药品信息
+        </template>
+        <template #default>
+            <el-form labelPosition="top">
+                <el-form-item label="名称">
+                    <el-input v-model="data.updateForm.name"></el-input>
+                </el-form-item>
+                <el-form-item label="价格">
+                    <el-input type="number" v-model="data.updateForm.price"></el-input>
+                </el-form-item>
+                <el-form-item label="功效">
+                    <el-input type="textarea" v-model="data.updateForm.symptom" rows="10"></el-input>
+                </el-form-item>
+            </el-form>
+        </template>
+        <template #footer>
+            <el-button @click="onInfoSubBtnClicked" type="primary">
+                提交
+            </el-button>
+        </template>
+    </el-drawer>
+    <el-drawer v-model="data.showUploadDrawer">
+        <template #header>
+            修改药物图片
+        </template>
+        <template #default>
+            <el-form labelPosition="top">
+                <el-label label="上传图片">
+                    <el-upload :on-change="onUploadChanged2" :auto-upload="false" drag style="width:100%;">
+                        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                        <div class="el-upload__text">
+                            拖动文件至此 或 <em>点击上传</em>
+                        </div>
+                        <template #tip>
+                            <div class="el-upload__tip">
+                                jpg/png 文件不超过20MB
+                            </div>
+                        </template>
+                    </el-upload>
+                </el-label>
+            </el-form>
+        </template>
+        <template #footer>
+            <el-button @click="onSubmitBtnClicked2" type="primary">
+                提交
+            </el-button>
+        </template>
+    </el-drawer>
     <el-drawer v-model="data.showDrawer">
         <template #header>
             新增药物
@@ -139,7 +271,7 @@ const onUploadChanged = (file, filelist) => {
                     <el-input v-model="data.dataForm.price"></el-input>
                 </el-form-item>
                 <el-form-item label="图片">
-                    <el-upload :on-change="onUploadChanged" :auto-upload="false" drag style="width:180px;">
+                    <el-upload :on-change="onUploadChanged" :auto-upload="false" drag style="width:100%;">
                         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                         <div class="el-upload__text">
                             拖动文件至此 或 <em>点击上传</em>
@@ -176,6 +308,12 @@ const onUploadChanged = (file, filelist) => {
         <el-table-column label="图片" prop="path">
             <template #default="scope">
                 <img :src="'/imgSer/' + data.tableData[scope.$index].path" style="width:100px;height:100px;" />
+            </template>
+        </el-table-column>
+        <el-table-column label="操作">
+            <template #default="scope">
+                <el-button type="primary" link @click="data.updateDrawer=true,data.updateForm.id=scope.row.id">修改信息</el-button>
+                <el-button type="primary" link @click="data.showUploadDrawer = true,data.changeId=scope.row.id">修改图片</el-button>
             </template>
         </el-table-column>
     </el-table>

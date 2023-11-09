@@ -1,8 +1,27 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, provide, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { WorkshopService, MedicineService } from '../../utils/axios/api';
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { PieChart } from 'echarts/charts';
+import {
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+} from 'echarts/components';
+import VChart, { THEME_KEY } from 'vue-echarts';
+use([
+    CanvasRenderer,
+    PieChart,
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+]);
+
+provide(THEME_KEY);
 
 const route = useRoute()
 const router = useRouter()
@@ -12,7 +31,10 @@ const data = reactive({
     tableData: [],
     isShowDetail: false,
     detailData: [],
-    flag: false
+    flag: false,
+    workshopNumber: '',
+    isShowChart: false,
+    chartData: []
 })
 
 var queryTimer = setInterval(() => {
@@ -57,6 +79,12 @@ const onExitDetailBtnClicked = () => {
 
 
 const main = () => {
+    WorkshopService.getWorkshopNumber({ id: route.params.id }).then((res) => {
+        data.workshopNumber = res.data.workshop.number
+    }).catch((err) => {
+        console.error(err)
+        ElMessage({ type: 'error', message: '请求错误' })
+    })
     WorkshopService.seeDaysTask({ id: route.params.id }).then((res) => {
         var tempLst = res.data.orders
         for (var item of tempLst) {
@@ -125,28 +153,91 @@ const onChangePwdBtnClicked = () => {
         })
 }
 
-const onFinishBtnTxtClicked = (id) => {
-    WorkshopService.finishOrder({ orderId: id }).then((res) => {
-        var cnt = res.data.count
-        // console.log(res.data)
-        if (cnt == 0) {
-            location.reload()
-            ElMessage({
-                type: 'warning',
-                message: '该任务最后一单已经完成，无需重复'
+const onFinishBtnTxtClicked = (id, workshopId, workshopNumber) => {
+    ElMessageBox.confirm(
+        '确定完成任务？',
+        '确认',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    )
+        .then(() => {
+            WorkshopService.newFinishOrder({ orderId: id, workshopId, workshopNumber }).then((res) => {
+                var cnt = res.data.count
+                // console.log(res.data)
+                if (cnt == 0) {
+                    location.reload()
+                    ElMessage({
+                        type: 'warning',
+                        message: '该任务最后一单已经完成，无需重复'
+                    })
+                }
+                else {
+                    ElMessage({
+                        type: 'success',
+                        message: `成功完成任务，剩余任务${cnt}`
+                    })
+                }
+            }).catch((err) => {
+                console.error(err)
+                ElMessage({
+                    type: 'error',
+                    message: '提交错误，请刷新页面并重新提交'
+                })
+            })
+        })
+        .catch(() => {
+
+        })
+}
+
+const onSeeChartBtnClicked = (orderId, workshopId, workshopNumber) => {
+    WorkshopService.getWorkshopMission({
+        orderId,
+        workshopId,
+        workshopNumber
+    }).then((res) => {
+        let lst = res.data.data
+        let option = {
+            title: {
+                text: `当前订单完成信息 当前车间${workshopNumber}`,
+                left: 'center'
+            },
+            xAxis: {
+                data: []
+            },
+            yAxis: {},
+            series: {
+                type: 'bar',
+                data: [],
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)',
+                    },
+                }
+            },
+            isShow: true
+        }
+        for (var index in lst) {
+            console.warn(index)
+            option.xAxis.data.push(index)
+            option.series.data.push({
+                name: index,
+                value: lst[index]
             })
         }
-        else {
-            ElMessage({
-                type: 'success',
-                message: `成功完成任务，剩余任务${cnt}`
-            })
-        }
+        data.chartData = option
+        data.isShowChart = true;
+
     }).catch((err) => {
         console.error(err)
         ElMessage({
             type: 'error',
-            message: '提交错误，请刷新页面并重新提交'
+            message: '请求错误'
         })
     })
 }
@@ -160,6 +251,7 @@ const onFinishBtnTxtClicked = (id) => {
             <template #header>
                 <div class="card-header">
                     <span>详情信息</span>
+
                     <el-button class="button" @click="onExitDetailBtnClicked" type="danger">关闭</el-button>
                 </div>
             </template>
@@ -169,6 +261,18 @@ const onFinishBtnTxtClicked = (id) => {
                 <el-table-column label="药品名称" prop="name"></el-table-column>
                 <el-table-column label="数量" prop="counts"></el-table-column>
             </el-table>
+        </el-card>
+    </div>
+    <div class="card-container full-size" v-if="data.isShowChart">
+        <el-card class="tb-card">
+            <template #header>
+                <div class="card-header">
+                    <span>详情信息</span>
+                    <el-button class="button" @click="data.isShowChart = false" type="danger">关闭</el-button>
+                </div>
+            </template>
+            <v-chart :option="data.chartData" autoresize style="width:100%;height:500px;" />
+
         </el-card>
     </div>
     <el-container class="full-size">
@@ -186,7 +290,9 @@ const onFinishBtnTxtClicked = (id) => {
             </div>
         </el-header>
         <el-main>
-            <el-button type="warning" @click="onChangePwdBtnClicked">修改密码</el-button>
+            <el-button type="warning" @click="onChangePwdBtnClicked">修改密码</el-button>&nbsp;&nbsp;
+            <span style="color:blueviolet;font-size: 15px;position: absolute;right: 10px;">当前车间 {{ data.workshopNumber
+            }}</span>
             <el-table class="full-size" :data="data.tableData">
                 <el-table-column label="ID" prop="id"></el-table-column>
                 <el-table-column label="买家" prop="companyName"></el-table-column>
@@ -201,7 +307,12 @@ const onFinishBtnTxtClicked = (id) => {
                         <el-button link type="primary" size="small" @click="onShowDetailTxtClicked(scope.$index)">
                             查看详情
                         </el-button>
-                        <el-button link type="primary" size="small" @click="onFinishBtnTxtClicked(scope.row.id)">
+                        <el-button link type="primary" size="small"
+                            @click="onSeeChartBtnClicked(scope.row.id, route.params.id, data.workshopNumber)">
+                            查看图表
+                        </el-button>
+                        <el-button link type="primary" size="small"
+                            @click="onFinishBtnTxtClicked(scope.row.id, route.params.id, data.workshopNumber)">
                             完成
                         </el-button>
                     </template>
