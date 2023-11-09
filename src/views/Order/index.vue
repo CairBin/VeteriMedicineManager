@@ -1,5 +1,5 @@
 <script setup>
-import { reactive,provide, ref } from 'vue'
+import { reactive, provide, ref } from 'vue'
 import { OrderService, MedicineService } from '../../utils/axios/api'
 import { ElMessage } from 'element-plus'
 
@@ -44,13 +44,13 @@ const data = reactive({
     },
     options: [],
     isShowDrawer: false,
-    showDetail:false,
-    chartForm:{
-        begin:'',
-        end:'',
-        data:{}
+    showDetail: false,
+    chartForm: {
+        begin: '',
+        end: '',
+        data: {}
     },
-    tempId:''
+    tempId: ''
 })
 
 
@@ -176,12 +176,12 @@ const onDistributeBtnClicked = (index) => {
 
 
 
-const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
+const onDetailTxtClicked = (orderId, beginTime, finishTime) => {
     data.tempId = orderId
 
     OrderService.getDetail({
-        orderId,beginTime,finishTime
-    }).then((res)=>{
+        orderId, beginTime, finishTime
+    }).then((res) => {
         let result = {
             title: {
                 text: '药物详情',
@@ -220,7 +220,7 @@ const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
                 }
             ]
         }
-        
+
         console.log(res.data.data)
         let lst = res.data.data
         let nameLst = []
@@ -252,16 +252,21 @@ const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
         series.push(obj)
         result.series = series
         result.legend.data = nameLst
-        data.chartForm = result
+        data.chartForm.data = result
         data.showDetail = true
 
-    }).catch((err)=>{
+
+    }).catch((err) => {
         console.error(err)
         ElMessage({
-            type:'error',
-            message:'请求错误'
+            type: 'error',
+            message: '请求错误'
         })
     })
+}
+
+const flushPie = () => {
+    onDetailTxtClicked(data.tempId,data.chartForm.begin,data.chartForm.end)
 }
 
 </script>
@@ -273,24 +278,19 @@ const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
                 <div class="card-header">
                     <span>详情信息</span>
 
-                    <el-button class="button" @click="data.showDetail=false" type="danger">关闭</el-button>
+                    <el-button class="button" @click="data.showDetail = false" type="danger">关闭</el-button>
                 </div>
             </template>
-            <!-- <el-date-picker
-        v-model="data.chartForm.begin"
-        type="datetime"
-        placeholder="开始时间"
-        @change="onDetailTxtClicked(data.tempId,data.chartForm.begin,data.chartForm.end)"
-      />
-      <el-date-picker
-        v-model="data.chartForm.end"
-        type="datetime"
-        placeholder="结束时间"
-        @change="onDetailTxtClicked(data.tempId,data.chartForm.begin,data.chartForm.end)"
-      /> -->
-            <v-chart style="width:80%;height:400px;" :option="data.chartForm">
-
+            <v-chart style="width:100%;height:400px;margin-top:10px;" :option="data.chartForm.data">
             </v-chart>
+            <el-row justify="center">
+                <el-date-picker v-model="data.chartForm.begin" type="datetime" placeholder="开始时间"
+                    @change="flushPie" format="YYYY/MM/DD hh:mm:ss"
+                    value-format="YYYY-MM-DD hh:mm:ss" />
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <el-date-picker v-model="data.chartForm.end" type="datetime" placeholder="结束时间" format="YYYY/MM/DD hh:mm:ss"
+                    value-format="YYYY-MM-DD hh:mm:ss" @change="flushPie"/>
+            </el-row>
         </el-card>
     </div>
 
@@ -339,7 +339,7 @@ const onDetailTxtClicked = (orderId,beginTime,finishTime)=>{
         <el-table-column label="完成时间" prop="finishTime"></el-table-column>
         <el-table-column label="操作">
             <template #default="scope">
-                <el-button link type="primary" size="small" @click="onDetailTxtClicked(scope.row.id,null,null)">
+                <el-button link type="primary" size="small" @click="onDetailTxtClicked(scope.row.id, null, null)">
                     查看详情
                 </el-button>
                 <el-button @click="onDistributeBtnClicked(scope.$index)" link type="primary" size="small"

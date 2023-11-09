@@ -26,7 +26,8 @@ const data = reactive({
     chartTotal: {},
     chartWeek: {},
     chartMonth: {},
-    chartYear: {}
+    chartYear: {},
+    
 })
 
 
@@ -141,8 +142,7 @@ const getPie = (reqFunc, key, title) => {
                 }
             ]
         }
-        console.warn(key)
-        console.log(res.data.data)
+
         let lst = res.data.data
         let nameLst = []
         let series = []

@@ -1,9 +1,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import { MedicineService } from '../../utils/axios/api';
+import { MedicineService,UserService } from '../../utils/axios/api';
 import { ElMessage } from 'element-plus'
-
-
 
 const tableRef = ref()
 
@@ -27,13 +25,14 @@ const data = reactive({
         name:'',
         price:0,
         symptom:''
-    }
+    },
+
 })
 
 const main = () => {
     MedicineService.getAllMedicine().then((res) => {
         console.log('药物列表')
-        console.log(res.data.medicines)
+        // console.log(res.data.medicines)
         data.tableData = res.data.medicines
     }).catch((err) => {
         console.error(err)

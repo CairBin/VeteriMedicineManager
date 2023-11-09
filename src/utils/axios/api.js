@@ -34,6 +34,10 @@ export class UserService {
         return request.postReq('/apiSer/manager/addManager', params);
     }
 
+    static async getManagerName(params) {
+        return request.getReq('/apiSer/manager/getManagerNameById',params)
+    }
+
 }
 
 export class MedicineService {
